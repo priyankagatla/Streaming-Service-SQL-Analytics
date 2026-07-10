@@ -44,3 +44,26 @@ SELECT
 FROM Content c
 LEFT JOIN WatchHistory w ON c.ContentID = w.ContentID
 WHERE w.LogID IS NULL;
+
+WITH GenreWatchTime AS (
+    SELECT 
+        c.Genre,
+        c.Title,
+        SUM(w.DurationMinutes) AS TotalWatchMinutes,
+        DENSE_RANK() OVER (PARTITION BY c.Genre ORDER BY SUM(w.DurationMinutes) DESC) as GenreRank
+    FROM WatchHistory w
+    JOIN Content c ON w.ContentID = c.ContentID
+    GROUP BY c.Genre, c.Title
+)
+SELECT Genre, Title, TotalWatchMinutes
+FROM GenreWatchTime
+WHERE GenreRank = 1;
+
+SELECT 
+    u.PremiumStatus,
+    COUNT(w.LogID) AS TotalViewsCount,
+    AVG(w.DurationMinutes) AS AvgSessionDurationMinutes,
+    SUM(w.DurationMinutes) AS TotalWatchTimeMinutes
+FROM Users u
+LEFT JOIN WatchHistory w ON u.UserID = w.UserID
+GROUP BY u.PremiumStatus;
